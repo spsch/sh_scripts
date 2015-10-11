@@ -1,0 +1,84 @@
+apply plugin: 'com.android.application'
+
+/**
+First lets define some standardized git tag name. In rest of article we use this format:
+{stage}/{x}.{y}.{z}
+where {stage} is something like alpha, beta, release and {x}, {y}, {z} are major, minor and build versions. Make your test git tag by calling:
+git tag release/0.2.1 -a
+Your last commit is now tagged as release with version 0.2.1, you can see more info about last release tag in current branch this way:
+git describe --match 'release/*' --long
+We use the command-line git tools to read last tag matching particular variant as mentioned above. 
+The result is simple function for reading and parsing version from git tag:
+*/
+def getVersionTag = { variant ->
+    def stdout
+    try {
+        stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine "git", "describe", "--match", "${variant}/*", "--long"
+            standardOutput = stdout
+        }
+        def longTag = stdout.toString().trim()
+
+        return longTag.substring(longTag.indexOf('/') + 1, longTag.indexOf('-'))
+    } catch (exception) {
+        return "0.0.1";
+    }
+}
+/**Result of this method is in our example “0.2.1”,the version without variant prefix. 
+This is good form for version name, but we have to convert it to version code:
+*/
+
+def getVersionCode = { tag ->
+    def parts = tag.tokenize('.')
+    if(parts.size() != 3 || parts[1].length() > 2 || parts[2].length() > 2) {
+        throw new RuntimeException("Invalid version tag \"${tag}\", format \"x.y.z\" expected.")
+    }
+    if(parts[1].length() == 1) {
+        parts[1] = "0" + parts[1]
+    }
+    if(parts[2].length() == 1) {
+        parts[2] = "0" + parts[2]
+    }
+    return Integer.parseInt(parts[0] + parts[1] + parts[2])
+}
+
+def getVersionName = { tag ->
+    return tag
+}
+
+android {
+
+    compileSdkVersion 22
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        applicationId "net.skoumal.gittagversion"
+        minSdkVersion 14
+        targetSdkVersion 22
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+/**Last step is applying version name and code to all build variants. 
+*/
+     applicationVariants.all { variant ->
+         def versionTag = getVersionTag(variant.buildType.name)
+         def myVersionCode = getVersionCode(versionTag)
+         def myVersionName = getVersionName(versionTag)
+
+         println variant.name + "[" + myVersionCode + ", " + myVersionName + "]"
+
+         variant.mergedFlavor.versionName = myVersionName;
+         variant.mergedFlavor.versionCode = myVersionCode;
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:22.1.1'
+}
