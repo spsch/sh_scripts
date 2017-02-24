@@ -1,0 +1,5 @@
+#/http://developer.android.com/tools/device.html
+# ADB
+SUBSYSTEMS=="usb", ACTION=="add", ENV{ID_USB_INTERFACES}=="*:ff4201:*", GROUP="plugdev"
+# Fastboot
+SUBSYSTEMS=="usb", ACTION=="add", ENV{ID_USB_INTERFACES}=="*:ff4203:*", GROUP="plugdev"
