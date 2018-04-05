@@ -8,7 +8,7 @@ try:
 	    r'SERVER=cxcldsrcnxqas01.database.windows.net;'
 	    r'DATABASE=cxclddbcnxmaqas;'
 	    r'UID=jsvehlak;'
-	    r'PWD=Passw0rd426'
+	    r'PWD=_______'
     )
 	print('OK')
 
